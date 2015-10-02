@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+    <head>
+        <script src='//code.jquery.com/jquery-1.7.2.min.js'></script>
+        <script src='//192.168.0.5:1234/socket.io/socket.io.js'></script>
+        <script>
+            var socket = io.connect('//192.168.0.5:1234');
+$(document).ready(function(){
+                $("#button").click(function() {
+                    socket.emit('arduino' ,"Hello World!");
+                })
+            })
+            socket.on('welcome', function(data) {
+                $('#messages').append('<li>' + data.message + '</li>');
+
+                socket.emit('atime', {data: 'foo!'});
+            });
+            socket.on('atime', function(data) {
+                console.log(data);
+                $('#messages').append('<li>' + data.time + '</li>');
+            });
+            socket.on('arduino', function(data) {
+                console.log(data);
+                $('#messages').append('<li>' + data + '</li>');
+            });
+		
+            socket.on('error', function() { console.error(arguments) });
+            socket.on('message', function() { console.log(arguments) });
+        </script>
+    </head>
+    <body>
+        <button type="button" id='button'>Send Message to Arduino</button> 
+<ul id='messages'></ul>
+
+    </body>
+</html>
