@@ -29,7 +29,9 @@
 #include "Arduino.h"
 
 //Uncomment the correct line
-#include <Ethernet.h>					//For W5100
+#include <ESP8266WiFi.h>				//For ESP8266
+
+//#include <Ethernet.h>					//For W5100
 //#include <UIPEthernet.h>				//For ENC28J60
 #include "SPI.h"
 
