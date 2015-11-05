@@ -52,7 +52,8 @@ public:
 private:
 	void parser(int index);
 	void sendHandshake(char hostname[]);
-	EthernetClient client;
+	//EthernetClient client;				//For ENC28J60 or W5100
+	WiFiClient client;						//For ESP8266		
 	DataArrivedDelegate dataArrivedDelegate;
 	bool readHandshake();
 	void readLine();
