@@ -13,6 +13,13 @@
 	copies of the Software, and to permit persons to whom the
 	Software is furnished to do so, subject to the following
 	conditions:
+
+
+
+	JSON support added using https://github.com/bblanchon/ArduinoJson
+
+
+
 	
 	The above copyright notice and this permission notice shall be
 	included in all copies or substantial portions of the Software.
@@ -29,12 +36,10 @@
 #include "Arduino.h"
 
 //Uncomment the correct line
-#include <ESP8266WiFi.h>				//For ESP8266
-
 //#include <Ethernet.h>					//For W5100
 //#include <UIPEthernet.h>				//For ENC28J60
-#include "SPI.h"
-
+#include <ESP8266WiFi.h>				//For ESP8266
+//#include "SPI.h"
 // Length of static data buffers
 #define DATA_BUFFER_LEN 120
 #define SID_LEN 24
@@ -45,9 +50,11 @@ public:
 	bool connect(char hostname[], int port = 80);
 	bool connected();
 	void disconnect();
+	bool reconnect(char hostname[], int port = 80);
 	bool monitor();
 	void setDataArrivedDelegate(DataArrivedDelegate dataArrivedDelegate);
 	void send(String RID, String Rname, String Rcontent);
+	void sendJSON(String RID, String JSON);
 	void heartbeat(int select);
 private:
 	void parser(int index);
