@@ -19,6 +19,10 @@ conditions:
 The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
 
+
+JSON support added using https://github.com/bblanchon/ArduinoJson
+
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -28,6 +32,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
+
+
 #include <SocketIOClient.h>
 
 
@@ -39,6 +45,15 @@ String Rcontent = "";
 
 
 bool SocketIOClient::connect(char thehostname[], int theport) {
+	if (!client.connect(thehostname, theport)) return false;
+	hostname = thehostname;
+	port = theport;
+	sendHandshake(hostname);
+	return readHandshake();
+}
+
+bool SocketIOClient::reconnect(char thehostname[], int theport)
+{
 	if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
 	port = theport;
@@ -76,8 +91,8 @@ void SocketIOClient::parser(int index) {
 	//Serial.println(sizemsg);			//Can be used for debugging
 	for (int i = index + 2; i < index + sizemsg + 2; i++)
 		rcvdmsg += (char)databuffer[i];
-	//Serial.print("Received message = ");	//Can be used for debugging
-	//Serial.println(rcvdmsg);				//Can be used for debugging
+	Serial.print("Received message = ");	//Can be used for debugging
+	Serial.println(rcvdmsg);				//Can be used for debugging
 	switch (rcvdmsg[0])
 	{
 	case '2':
@@ -102,6 +117,7 @@ void SocketIOClient::parser(int index) {
 			//Serial.println("RID = " + RID);
 			//Serial.println("Rname = " + Rname);
 			//Serial.println("Rcontent = " + Rcontent);
+			Serial.println(rcvdmsg);
 			break;
 		}
 	}
@@ -284,24 +300,82 @@ void SocketIOClient::readLine() {
 }
 
 void SocketIOClient::send(String RID, String Rname, String Rcontent) {
-	
+
 	String message = "42[\"" + RID + "\",{\"" + Rname + "\":\"" + Rcontent + "\"}]";
 	int header[10];
 	header[0] = 0x81;
 	int msglength = message.length();
-	randomSeed(analogRead(0)); 
+	randomSeed(analogRead(0));
 	String mask = "";
 	String masked = message;
-	for(int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
-		char a = random(48,57);
+		char a = random(48, 57);
 		mask += a;
 	}
 	for (int i = 0; i < msglength; i++)
 		masked[i] = message[i] ^ mask[i % 4];
 
 	client.print((char)header[0]);	//has to be sent for proper communication
-	//Depending on the size of the message
+									//Depending on the size of the message
+	if (msglength <= 125)
+	{
+		header[1] = msglength + 128;
+		client.print((char)header[1]);	//size of the message + 128 because message has to be masked
+	}
+	else if (msglength >= 126 && msglength <= 65535)
+	{
+		header[1] = 126 + 128;
+		client.print((char)header[1]);
+		header[2] = (msglength >> 8) & 255;
+		client.print((char)header[2]);
+		header[3] = (msglength)& 255;
+		client.print((char)header[3]);
+	}
+	else
+	{
+		header[1] = 127 + 128;
+		client.print((char)header[1]);
+		header[2] = (msglength >> 56) & 255;
+		client.print((char)header[2]);
+		header[3] = (msglength >> 48) & 255;
+		client.print((char)header[4]);
+		header[4] = (msglength >> 40) & 255;
+		client.print((char)header[4]);
+		header[5] = (msglength >> 32) & 255;
+		client.print((char)header[5]);
+		header[6] = (msglength >> 24) & 255;
+		client.print((char)header[6]);
+		header[7] = (msglength >> 16) & 255;
+		client.print((char)header[7]);
+		header[8] = (msglength >> 8) & 255;
+		client.print((char)header[8]);
+		header[9] = (msglength)& 255;
+		client.print((char)header[9]);
+	}
+
+	client.print(mask);
+	client.print(masked);
+}
+
+void SocketIOClient::sendJSON(String RID, String JSON) {
+	String message = "42[\"" + RID + "\"," + JSON + "]";
+	int header[10];
+	header[0] = 0x81;
+	int msglength = message.length();
+	randomSeed(analogRead(0));
+	String mask = "";
+	String masked = message;
+	for (int i = 0; i < 4; i++)
+	{
+		char a = random(48, 57);
+		mask += a;
+	}
+	for (int i = 0; i < msglength; i++)
+		masked[i] = message[i] ^ mask[i % 4];
+
+	client.print((char)header[0]);	//has to be sent for proper communication
+									//Depending on the size of the message
 	if (msglength <= 125)
 	{
 		header[1] = msglength + 128;
