@@ -88,8 +88,8 @@ void SocketIOClient::terminateCommand(void) {
 void SocketIOClient::parser(int index) {
 	String rcvdmsg = "";
 	int sizemsg = databuffer[index + 1];
-	//Serial.print("Message size = ");	//Can be used for debugging
-	//Serial.println(sizemsg);			//Can be used for debugging
+	Serial.print("Message size = ");	//Can be used for debugging
+	Serial.println(sizemsg);			//Can be used for debugging
 	for (int i = index + 2; i < index + sizemsg + 2; i++)
 		rcvdmsg += (char)databuffer[i];
 	Serial.print("Received message = ");	//Can be used for debugging
@@ -198,10 +198,16 @@ bool SocketIOClient::readHandshake() {
 		return false;
 	}
 	eatHeader();
-	readLine();
-	for (int i = 0; i < 20; i++)
+	readLine(); 
+	String tmp = databuffer;
+
+	int sidindex = tmp.indexOf("sid");
+	int sidendindex = tmp.indexOf("\"",sidindex+6);
+	int count = sidendindex - sidindex - 6;
+
+	for (int i = 0; i < count; i++)
 	{
-		sid[i] = databuffer[i + 12];
+		sid[i] = databuffer[i + sidindex + 6];
 	}
 	Serial.println(" ");
 	Serial.print(F("Connected. SID="));
@@ -299,7 +305,7 @@ void SocketIOClient::readLine() {
 	while (client.available() && (dataptr < &databuffer[DATA_BUFFER_LEN - 2]))
 	{
 		char c = client.read();
-		//Serial.print(c);			//Can be used for debugging
+		Serial.print(c);			//Can be used for debugging
 		if (c == 0) Serial.print("");
 		else if (c == 255) Serial.println("");
 		else if (c == '\r') { ; }
