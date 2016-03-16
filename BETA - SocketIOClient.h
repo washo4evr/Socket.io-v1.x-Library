@@ -49,6 +49,11 @@
 #include <ESP8266WiFi.h>				//For ESP8266
 #endif
 
+#ifndef W5100 || ENC28J60 || ESP8266	//If no interface is defined
+#error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
+#error "above your includes like so : #define <interface> "
+#endif
+
 //#include "SPI.h"
 // Length of static data buffers
 #define DATA_BUFFER_LEN 120
