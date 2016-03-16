@@ -36,9 +36,19 @@
 #include "Arduino.h"
 
 //Uncomment the correct line
-//#include <Ethernet.h>					//For W5100
-//#include <UIPEthernet.h>				//For ENC28J60
+
+#ifdef W5100
+#include <Ethernet.h>					//For W5100
+#endif
+
+#ifdef ENC28J60
+#include <UIPEthernet.h>				//For ENC28J60
+#endif
+
+#ifdef ESP8266
 #include <ESP8266WiFi.h>				//For ESP8266
+#endif
+
 //#include "SPI.h"
 // Length of static data buffers
 #define DATA_BUFFER_LEN 120
