@@ -51,7 +51,7 @@
 
 #ifndef W5100 || ENC28J60 || ESP8266	//If no interface is defined
 #error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
-#error "above your includes like so : #define <interface> "
+#error "above your includes like so : #define ESP8266 "
 #endif
 
 //#include "SPI.h"
