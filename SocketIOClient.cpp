@@ -291,7 +291,7 @@ bool SocketIOClient::readHandshake() {
 	return true;
 }
 
-void SocketIOClient::getREST(String path);
+void SocketIOClient::getREST(String path)
 {
 	String message = "GET /" + path + "/ HTTP/1.1";
 	client.println(message);
@@ -301,7 +301,7 @@ void SocketIOClient::getREST(String path);
 	client.println(F("Connection: close\r\n"));
 }
 
-void SocketIOClient::postREST(String path, String type, String data);
+void SocketIOClient::postREST(String path, String type, String data)
 {
 	String message = "POST /" + path + "/ HTTP/1.1";
 	client.println(message);
@@ -318,7 +318,7 @@ void SocketIOClient::postREST(String path, String type, String data);
 
 }
 
-void SocketIOClient::putREST(String path, String type, String data);
+void SocketIOClient::putREST(String path, String type, String data)
 {
 	String message = "PUT /" + path + "/ HTTP/1.1";
 	client.println(message);
@@ -334,7 +334,7 @@ void SocketIOClient::putREST(String path, String type, String data);
 	client.println(data);
 }
 
-void SocketIOClient::deleteREST(String path);
+void SocketIOClient::deleteREST(String path)
 {
 	String message = "DELETE /" + path + "/ HTTP/1.1";
 	client.println(message);
