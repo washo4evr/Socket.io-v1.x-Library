@@ -1,12 +1,8 @@
 /*
 socket.io-arduino-client: a Socket.IO client for the Arduino
-
 Based on the Kevin Rohling WebSocketClient & Bill Roy Socket.io Lbrary
-
 Copyright 2015 Florent Vidal
-
 Supports Socket.io v1.x
-
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
@@ -15,14 +11,8 @@ copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following
 conditions:
-
 The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
-
-
-JSON support added using https://github.com/bblanchon/ArduinoJson
-
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -32,8 +22,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-
-
 #include <SocketIOClient.h>
 
 
@@ -50,6 +38,13 @@ bool SocketIOClient::connect(char thehostname[], int theport) {
 	port = theport;
 	sendHandshake(hostname);
 	return readHandshake();
+}
+
+bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
+	if (!client.connect(thehostname, theport)) return false;
+	hostname = thehostname;
+	port = theport;
+	return true;
 }
 
 bool SocketIOClient::reconnect(char thehostname[], int theport)
@@ -86,9 +81,14 @@ void SocketIOClient::terminateCommand(void) {
 
 void SocketIOClient::parser(int index) {
 	String rcvdmsg = "";
-	int sizemsg = databuffer[index + 1];
-	//Serial.print("Message size = ");	//Can be used for debugging
-	//Serial.println(sizemsg);			//Can be used for debugging
+	int sizemsg = databuffer[index + 1];   // 0-125 byte, index ok        Fix provide by Galilei11. Thanks
+	if (databuffer[index + 1]>125)
+	{
+		sizemsg = databuffer[index + 2];    // 126-255 byte
+		index += 1;       // index correction to start
+	}
+	Serial.print("Message size = ");	//Can be used for debugging
+	Serial.println(sizemsg);			//Can be used for debugging
 	for (int i = index + 2; i < index + sizemsg + 2; i++)
 		rcvdmsg += (char)databuffer[i];
 	Serial.print("Received message = ");	//Can be used for debugging
@@ -99,11 +99,11 @@ void SocketIOClient::parser(int index) {
 		Serial.println("Ping received - Sending Pong");
 		heartbeat(1);
 		break;
-	
+
 	case '3':
 		Serial.println("Pong received - All good");
 		break;
-	
+
 	case '4':
 		switch (rcvdmsg[1])
 		{
@@ -138,14 +138,14 @@ bool SocketIOClient::monitor() {
 		return 0;
 	}
 	char which;
-	
+
 	while (client.available()) {
 		readLine();
 		tmp = databuffer;
-		//Serial.println(databuffer);
+		Serial.println(databuffer);
 		dataptr = databuffer;
 		index = tmp.indexOf((char)129);	//129 DEC = 0x81 HEX = sent for proper communication
-		index2 = tmp.indexOf((char)129,index+1);
+		index2 = tmp.indexOf((char)129, index + 1);
 		/*Serial.print("Index = ");			//Can be used for debugging
 		Serial.print(index);
 		Serial.print(" & Index2 = ");
@@ -198,9 +198,15 @@ bool SocketIOClient::readHandshake() {
 	}
 	eatHeader();
 	readLine();
-	for (int i = 0; i < 20; i++)
+	String tmp = databuffer;
+
+	int sidindex = tmp.indexOf("sid");
+	int sidendindex = tmp.indexOf("\"", sidindex + 6);
+	int count = sidendindex - sidindex - 6;
+
+	for (int i = 0; i < count; i++)
 	{
-		sid[i] = databuffer[i + 12];
+		sid[i] = databuffer[i + sidindex + 6];
 	}
 	Serial.println(" ");
 	Serial.print(F("Connected. SID="));
@@ -255,8 +261,8 @@ bool SocketIOClient::readHandshake() {
 
 
 	/*
-		Generating a 32 bits mask requiered for newer version
-		Client has to send "52" for the upgrade to websocket
+	Generating a 32 bits mask requiered for newer version
+	Client has to send "52" for the upgrade to websocket
 	*/
 	randomSeed(analogRead(0));
 	String mask = "";
@@ -282,6 +288,59 @@ bool SocketIOClient::readHandshake() {
 	return true;
 }
 
+void SocketIOClient::getREST(String path);
+{
+	String message = "GET /" + path + "/ HTTP/1.1";
+	client.println(message);
+	client.print(F("Host: "));
+	client.println(hostname);
+	client.println(F("Origin: Arduino"));
+	client.println(F("Connection: close\r\n"));
+}
+
+void SocketIOClient::postREST(String path, String type, String data);
+{
+	String message = "POST /" + path + "/ HTTP/1.1";
+	client.println(message);
+	client.print(F("Host: "));
+	client.println(hostname);
+	client.println(F("Origin: Arduino"));
+	client.println(F("Connection: close\r\n"));
+	client.print(F("Content-Length: "));
+	client.println(data.length());
+	client.print(F("Content-Type: "));
+	client.println(type);
+	client.println("\r\n");
+	client.println(data);
+
+}
+
+void SocketIOClient::putREST(String path, String type, String data);
+{
+	String message = "PUT /" + path + "/ HTTP/1.1";
+	client.println(message);
+	client.print(F("Host: "));
+	client.println(hostname);
+	client.println(F("Origin: Arduino"));
+	client.println(F("Connection: close\r\n"));
+	client.print(F("Content-Length: "));
+	client.println(data.length());
+	client.print(F("Content-Type: "));
+	client.println(type);
+	client.println("\r\n");
+	client.println(data);
+}
+
+void SocketIOClient::deleteREST(String path);
+{
+	String message = "DELETE /" + path + "/ HTTP/1.1";
+	client.println(message);
+	client.print(F("Host: "));
+	client.println(hostname);
+	client.println(F("Origin: Arduino"));
+	client.println(F("Connection: close\r\n"));
+}
+
 void SocketIOClient::readLine() {
 	for (int i = 0; i < DATA_BUFFER_LEN; i++)
 		databuffer[i] = ' ';
@@ -289,7 +348,7 @@ void SocketIOClient::readLine() {
 	while (client.available() && (dataptr < &databuffer[DATA_BUFFER_LEN - 2]))
 	{
 		char c = client.read();
-		//Serial.print(c);			//Can be used for debugging
+		Serial.print(c);			//Can be used for debugging
 		if (c == 0) Serial.print("");
 		else if (c == 255) Serial.println("");
 		else if (c == '\r') { ; }
