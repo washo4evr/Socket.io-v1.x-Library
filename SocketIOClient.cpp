@@ -23,9 +23,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define ESP8266
+#define W5100
 
 #include <SocketIOClient.h>
+
+
 
 
 String tmpdata = "";	//External variables
@@ -67,22 +69,8 @@ void SocketIOClient::disconnect() {
 	client.stop();
 }
 
-// find the nth colon starting from dataptr
-void SocketIOClient::findColon(char which) {
-	while (*dataptr) {
-		if (*dataptr == ':') {
-			if (--which <= 0) return;
-		}
-		++dataptr;
-	}
-}
 
-// terminate command at dataptr at closing double quote
-void SocketIOClient::terminateCommand(void) {
-	dataptr[strlen(dataptr) - 3] = 0;
-}
-
-void SocketIOClient::parser(int index) {
+void SocketIOClient::parser(int index, bool parseJson) {
 	String rcvdmsg = "";
 	int sizemsg = databuffer[index + 1];   // 0-125 byte, index ok        Fix provide by Galilei11. Thanks
 	if (databuffer[index + 1]>125)
@@ -115,18 +103,23 @@ void SocketIOClient::parser(int index) {
 			break;
 		case '2':
 			RID = rcvdmsg.substring(4, rcvdmsg.indexOf("\","));
-			Rname = rcvdmsg.substring(rcvdmsg.indexOf("\",") + 4, rcvdmsg.indexOf("\":"));
-			Rcontent = rcvdmsg.substring(rcvdmsg.indexOf("\":") + 3, rcvdmsg.indexOf("\"}"));
-			//Serial.println("RID = " + RID);
-			//Serial.println("Rname = " + Rname);
-			//Serial.println("Rcontent = " + Rcontent);
+            //Serial.println("RID = " + RID);
+            if(!parseJson){
+			     Rname = rcvdmsg.substring(rcvdmsg.indexOf("\",") + 4, rcvdmsg.indexOf("\":"));
+			     Rcontent = rcvdmsg.substring(rcvdmsg.indexOf("\":") + 3, rcvdmsg.indexOf("}"));
+			     //Serial.println("Rname = " + Rname);
+			     //Serial.println("Rcontent = " + Rcontent);
+            }
+            else{
+                Rcontent = rcvdmsg.substring(rcvdmsg.indexOf("\",") + 2, rcvdmsg.indexOf("}") + 1);
+            }
 			Serial.println(rcvdmsg);
 			break;
 		}
 	}
 }
 
-bool SocketIOClient::monitor() {
+bool SocketIOClient::monitor(bool parseJson) {
 	int index = -1;
 	int index2 = -1;
 	String tmp = "";
@@ -155,13 +148,15 @@ bool SocketIOClient::monitor() {
 		Serial.println(index2);*/
 		if (index != -1)
 		{
-			parser(index);
+			parser(index, parseJson);
+            
 		}
 		if (index2 != -1)
 		{
-			parser(index2);
+			parser(index2, parseJson);
 		}
 	}
+    return true;
 }
 
 void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDelegate) {
@@ -508,4 +503,19 @@ void SocketIOClient::heartbeat(int select) {
 	client.print((char)129);	//size of the message (1) + 128 because message has to be masked
 	client.print(mask);
 	client.print(masked);
+}
+
+//find the nth colon starting from dataptr
+void SocketIOClient::findColon(char which) {
+	while (*dataptr) {
+		if (*dataptr == ':') {
+			if (--which <= 0) return;
+		}
+		++dataptr;
+	}
+}
+
+// terminate command at dataptr at closing double quote
+void SocketIOClient::terminateCommand(void) {
+	dataptr[strlen(dataptr) - 3] = 0;
 }

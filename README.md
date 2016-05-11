@@ -9,7 +9,8 @@ Support for JSON was added using https://github.com/bblanchon/ArduinoJson
 Users will need to download the library directly from this link and install it.
 
 Instead of using client.send, you can now use client.sendJSON
-
+To parse the inbound JSON Message add true to the monitor function and readout Rcontent
+It can be left out for the parsed pair of Rname and Rcontent
 
 thanks to funkyguy4000, users can now use #define ESP8266, #define W5100 or #define ENC28J60
 no need to edit socketio.h anymore

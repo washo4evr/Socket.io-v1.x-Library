@@ -57,7 +57,7 @@ public:
 	bool connected();
 	void disconnect();
 	bool reconnect(char hostname[], int port = 80);
-	bool monitor();
+	bool monitor(bool parseJSON = false);
 	void setDataArrivedDelegate(DataArrivedDelegate dataArrivedDelegate);
 	void send(String RID, String Rname, String Rcontent);
 	void sendJSON(String RID, String JSON);
@@ -67,11 +67,12 @@ public:
 	void putREST(String path, String type, String data);
 	void deleteREST(String path);
 private:
-	void parser(int index);
+	void parser(int index, bool parseJSON);
 	void sendHandshake(char hostname[]);
+   
 	//EthernetClient client;				//For ENC28J60 or W5100
-	WiFiClient client;						//For ESP8266
-	DataArrivedDelegate dataArrivedDelegate;
+    WiFiClient client;						//For ESP8266
+  	DataArrivedDelegate dataArrivedDelegate;
 	bool readHandshake();
 	void readLine();
 	char *dataptr;
