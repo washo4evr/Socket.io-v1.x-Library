@@ -51,14 +51,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 class SocketIOClient {
 public:
-	typedef void(*DataArrivedDelegate)(SocketIOClient client, char *data);
 	bool connect(char hostname[], int port = 80);
 	bool connectHTTP(char hostname[], int port = 80);
 	bool connected();
 	void disconnect();
 	bool reconnect(char hostname[], int port = 80);
 	bool monitor();
-	void setDataArrivedDelegate(DataArrivedDelegate dataArrivedDelegate);
 	void send(String RID, String Rname, String Rcontent);
 	void sendJSON(String RID, String JSON);
 	void heartbeat(int select);
@@ -71,7 +69,6 @@ private:
 	void sendHandshake(char hostname[]);
 	//EthernetClient client;				//For ENC28J60 or W5100
 	WiFiClient client;						//For ESP8266
-	DataArrivedDelegate dataArrivedDelegate;
 	bool readHandshake();
 	void readLine();
 	char *dataptr;
