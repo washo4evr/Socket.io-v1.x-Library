@@ -164,10 +164,6 @@ bool SocketIOClient::monitor() {
 	}
 }
 
-void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDelegate) {
-	dataArrivedDelegate = newdataArrivedDelegate;
-}
-
 void SocketIOClient::sendHandshake(char hostname[]) {
 	client.println(F("GET /socket.io/1/?transport=polling&b64=true HTTP/1.1"));
 	client.print(F("Host: "));
