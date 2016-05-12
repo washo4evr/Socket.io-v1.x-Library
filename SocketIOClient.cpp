@@ -27,9 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include <SocketIOClient.h>
 
-
-
-
 String tmpdata = "";	//External variables
 String RID = "";
 String Rname = "";
@@ -68,7 +65,6 @@ bool SocketIOClient::connected() {
 void SocketIOClient::disconnect() {
 	client.stop();
 }
-
 
 void SocketIOClient::parser(int index, bool parseJson) {
 	String rcvdmsg = "";
