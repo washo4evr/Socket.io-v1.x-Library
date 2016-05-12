@@ -159,10 +159,6 @@ bool SocketIOClient::monitor(bool parseJson) {
     return true;
 }
 
-void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDelegate) {
-	dataArrivedDelegate = newdataArrivedDelegate;
-}
-
 void SocketIOClient::sendHandshake(char hostname[]) {
 	client.println(F("GET /socket.io/1/?transport=polling&b64=true HTTP/1.1"));
 	client.print(F("Host: "));
@@ -505,17 +501,4 @@ void SocketIOClient::heartbeat(int select) {
 	client.print(masked);
 }
 
-//find the nth colon starting from dataptr
-void SocketIOClient::findColon(char which) {
-	while (*dataptr) {
-		if (*dataptr == ':') {
-			if (--which <= 0) return;
-		}
-		++dataptr;
-	}
-}
 
-// terminate command at dataptr at closing double quote
-void SocketIOClient::terminateCommand(void) {
-	dataptr[strlen(dataptr) - 3] = 0;
-}
