@@ -11,11 +11,7 @@ int port = 1234;
 extern String RID;
 extern String Rname;
 extern String Rcontent;
-// websocket message handler: do something with command from server
-void ondata(SocketIOClient client, char *data)
-{
-	Serial.print(data);
-}
+
 unsigned long previousMillis = 0; 
 long interval = 10000; 
 void setup() {
@@ -27,7 +23,6 @@ void setup() {
 
 	Ethernet.begin(mac);
 
-	client.setDataArrivedDelegate(ondata);
 	if (!client.connect(hostname, port))
 		Serial.println(F("Not connected."));
 	if (client.connected())
