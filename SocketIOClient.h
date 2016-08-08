@@ -26,24 +26,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "Arduino.h"
 
-#if !defined(W5100)
+#if defined(W5100)
 #include <Ethernet.h>
 #include "SPI.h"					//For W5100
-#endif
-
-#if !defined(ENC28J60)
+#elif defined(ENC28J60)
 #include <UIPEthernet.h>
 #include "SPI.h"					//For ENC28J60
-#endif
-
-#if !defined(ESP8266)
+#elif defined(ESP8266)
 #include <ESP8266WiFi.h>				//For ESP8266
-#endif
-
-#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60)ENC28J60)	//If no interface is defined
+#else
+//If no interface is defined
 #error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
 #error "above your includes like so : #define ESP8266 "
 #endif
+
 
 // Length of static data buffers
 #define DATA_BUFFER_LEN 120
