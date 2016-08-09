@@ -26,17 +26,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "Arduino.h"
 
-#if !defined(W5100)
+#if defined(W5100)
 #include <Ethernet.h>
 #include "SPI.h"					//For W5100
 #endif
 
-#if !defined(ENC28J60)
+#if defined(ENC28J60)
 #include <UIPEthernet.h>
 #include "SPI.h"					//For ENC28J60
 #endif
 
-#if !defined(ESP8266)
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>				//For ESP8266
 #endif
 
