@@ -49,11 +49,7 @@ bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
 }
 
 bool SocketIOClient::reconnect(char thehostname[], int theport) {
-	if (!client.connect(thehostname, theport)) return false;
-	hostname = thehostname;
-	port = theport;
-	sendHandshake(hostname);
-	return readHandshake();
+	return this->connect(thehostname, theport);  
 }
 
 bool SocketIOClient::connected() {
