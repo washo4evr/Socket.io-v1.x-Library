@@ -34,9 +34,7 @@ String Rname = "";
 String Rcontent = "";
 
 bool SocketIOClient::connect(char thehostname[], int theport) {
-	if (!client.connect(thehostname, theport)) return false;
-	hostname = thehostname;
-	port = theport;
+  if(!this->connectHTTP(thehostname, theport)) return false;
 	sendHandshake(hostname);
 	return readHandshake();
 }
