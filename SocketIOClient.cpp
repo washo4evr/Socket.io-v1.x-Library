@@ -33,8 +33,6 @@ String RID = "";
 String Rname = "";
 String Rcontent = "";
 
-
-
 bool SocketIOClient::connect(char thehostname[], int theport) {
 	if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
@@ -50,8 +48,7 @@ bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
 	return true;
 }
 
-bool SocketIOClient::reconnect(char thehostname[], int theport)
-{
+bool SocketIOClient::reconnect(char thehostname[], int theport) {
 	if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
 	port = theport;
@@ -288,21 +285,21 @@ bool SocketIOClient::readHandshake() {
 	return true;
 }
 
-void SocketIOClient::getREST(String path){
-	String message = "GET /" + path + "/ HTTP/1.1";
+void SocketIOClient::REST(String method, String path){
+  String message = method + " /" + path + "/ HTTP/1.1";
 	client.println(message);
 	client.print(F("Host: "));
 	client.println(hostname);
 	client.println(F("Origin: Arduino"));
 	client.println(F("Connection: close\r\n"));
 }
+
+void SocketIOClient::getREST(String path){
+  this->REST("GET", path);
+}
+
 void SocketIOClient::postREST(String path, String type, String data){
-	String message = "POST /" + path + "/ HTTP/1.1";
-	client.println(message);
-	client.print(F("Host: "));
-	client.println(hostname);
-	client.println(F("Origin: Arduino"));
-	client.println(F("Connection: close\r\n"));
+	this->REST("POST", path);
 	client.print(F("Content-Length: "));
 	client.println(data.length());
 	client.print(F("Content-Type: "));
@@ -311,13 +308,9 @@ void SocketIOClient::postREST(String path, String type, String data){
 	client.println(data);
 
 }
+
 void SocketIOClient::putREST(String path, String type, String data){
-	String message = "PUT /" + path + "/ HTTP/1.1";
-	client.println(message);
-	client.print(F("Host: "));
-	client.println(hostname);
-	client.println(F("Origin: Arduino"));
-	client.println(F("Connection: close\r\n"));
+	this->REST("PUT", path);
 	client.print(F("Content-Length: "));
 	client.println(data.length());
 	client.print(F("Content-Type: "));
@@ -325,14 +318,11 @@ void SocketIOClient::putREST(String path, String type, String data){
 	client.println("\r\n");
 	client.println(data);
 }
+
 void SocketIOClient::deleteREST(String path){
-	String message = "DELETE /" + path + "/ HTTP/1.1";
-	client.println(message);
-	client.print(F("Host: "));
-	client.println(hostname);
-	client.println(F("Origin: Arduino"));
-	client.println(F("Connection: close\r\n"));
+	this->REST("DELETE", path);
 }
+
 void SocketIOClient::readLine() {
 	for (int i = 0; i < DATA_BUFFER_LEN; i++)
 		databuffer[i] = ' ';
@@ -349,6 +339,7 @@ void SocketIOClient::readLine() {
 	}
 	*dataptr = 0;
 }
+
 void SocketIOClient::send(String message) {
   int header[10];
 	header[0] = 0x81;
