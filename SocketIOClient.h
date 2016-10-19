@@ -26,6 +26,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "Arduino.h"
 
+#ifdef DEBUG
+ #define DEBUG_PRINT(x)  Serial.print (x)
+ #define DEBUG_PRINTLN(x)  Serial.println (x)
+#else
+ #define DEBUG_PRINT(x)
+ #define DEBUG_PRINTLN(x)
+#endif
+
 #if defined(W5100)
 #include <Ethernet.h>
 #include "SPI.h"					//For W5100
@@ -40,7 +48,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ESP8266WiFi.h>				//For ESP8266
 #endif
 
-#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60)ENC28J60)	//If no interface is defined
+#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60))	//If no interface is defined
 #error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
 #error "above your includes like so : #define ESP8266 "
 #endif
@@ -70,6 +78,8 @@ private:
 	//EthernetClient client;				//For ENC28J60 or W5100
 	WiFiClient client;						//For ESP8266
 	bool readHandshake();
+  void send(String message);
+  void REST(String method, String path, bool close = true);
 	void readLine();
 	char *dataptr;
 	char databuffer[DATA_BUFFER_LEN];
