@@ -25,6 +25,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "Arduino.h"
+#define DEBUG
+#ifdef DEBUG
+ #define DEBUG_PRINT(x)  Serial.print (x)
+ #define DEBUG_PRINTLN(x)  Serial.println (x)
+#else
+ #define DEBUG_PRINT(x)
+ #define DEBUG_PRINTLN(x)
+#endif
 
 #if defined(W5100)
 #include <Ethernet.h>
@@ -40,10 +48,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ESP8266WiFi.h>				//For ESP8266
 #endif
 
-#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60)ENC28J60)	//If no interface is defined
-#error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
-#error "above your includes like so : #define ESP8266 "
-#endif
+// #if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60))	//If no interface is defined
+// #error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
+// #error "above your includes like so : #define ESP8266 "
+// #endif
 
 // Length of static data buffers
 #define DATA_BUFFER_LEN 120
@@ -64,12 +72,17 @@ public:
 	void postREST(String path, String type, String data);
 	void putREST(String path, String type, String data);
 	void deleteREST(String path);
+  void setCallbackConnect(void (* callbackConnect)(void));
 private:
 	void parser(int index);
+  void (* callbackConnect)(void);
 	void sendHandshake(char hostname[]);
+  void REST_DATA(String type, String data);
 	//EthernetClient client;				//For ENC28J60 or W5100
 	WiFiClient client;						//For ESP8266
 	bool readHandshake();
+  void send(String message);
+  void REST(String method, String path);
 	void readLine();
 	char *dataptr;
 	char databuffer[DATA_BUFFER_LEN];
