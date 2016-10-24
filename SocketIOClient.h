@@ -77,6 +77,7 @@ private:
 	void parser(int index);
   void (* callbackConnect)(void);
 	void sendHandshake(char hostname[]);
+  void REST_DATA(String type, String data);
 	//EthernetClient client;				//For ENC28J60 or W5100
 	WiFiClient client;						//For ESP8266
 	bool readHandshake();
