@@ -33,14 +33,22 @@ String RID = "";
 String Rname = "";
 String Rcontent = "";
 
+void SocketIOClient::setCallbackConnect(void (* callbackConnect)(void)) {
+  this->callbackConnect = callbackConnect;
+}
+
 bool SocketIOClient::connect(char thehostname[], int theport) {
+  DEBUG_PRINTLN("connect");
   if(!this->connectHTTP(thehostname, theport)) return false;
 	sendHandshake(hostname);
-	return readHandshake();
+  int tmp = readHandshake();
+  if(tmp && this->callbackConnect) this->callbackConnect();
+	return tmp;
 }
 
 bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
-	if (!client.connect(thehostname, theport)) return false;
+	DEBUG_PRINTLN("connecthttp");
+  if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
 	port = theport;
 	return true;
@@ -51,7 +59,7 @@ bool SocketIOClient::reconnect(char thehostname[], int theport) {
 }
 
 bool SocketIOClient::connected() {
-	return client.connected();
+  return client.connected() || this->reconnect(hostname, port);
 }
 
 void SocketIOClient::disconnect() {
@@ -123,20 +131,16 @@ bool SocketIOClient::monitor() {
 	String tmp = "";
 	*databuffer = 0;
 
-	if (!client.connected()) {
-		if (!client.connect(hostname, port)) return 0;
-	}
-
-	if (!client.available())
-	{
-		return 0;
-	}
+	if(!this->connected() || !client.available()) {
+    return 0;
+  }
+  
 	char which;
 
 	while (client.available()) {
 		readLine();
 		tmp = databuffer;
-		Serial.println(databuffer);
+		DEBUG_PRINTLN(databuffer);
 		dataptr = databuffer;
 		index = tmp.indexOf((char)129);	//129 DEC = 0x81 HEX = sent for proper communication
 		index2 = tmp.indexOf((char)129, index + 1);
@@ -157,6 +161,7 @@ bool SocketIOClient::monitor() {
 }
 
 void SocketIOClient::sendHandshake(char hostname[]) {
+  DEBUG_PRINTLN("sendHandshake");
 	client.println(F("GET /socket.io/1/?transport=polling&b64=true HTTP/1.1"));
 	client.print(F("Host: "));
 	client.println(hostname);
@@ -165,7 +170,7 @@ void SocketIOClient::sendHandshake(char hostname[]) {
 
 bool SocketIOClient::waitForInput(void) {
 	unsigned long now = millis();
-	while (!client.available() && ((millis() - now) < 30000UL)) { ; }
+	while (!client.available() && ((millis() - now) < 30000UL)) yield();
 	return client.available();
 }
 
@@ -177,7 +182,7 @@ void SocketIOClient::eatHeader(void) {
 }
 
 bool SocketIOClient::readHandshake() {
-
+  DEBUG_PRINTLN("readHandshake");
 	if (!waitForInput()) return false;
 
 	// check for happy "HTTP/1.1 200" response
@@ -199,9 +204,9 @@ bool SocketIOClient::readHandshake() {
 	{
 		sid[i] = databuffer[i + sidindex + 6];
 	}
-	Serial.println(" ");
-	Serial.print(F("Connected. SID="));
-	Serial.println(sid);	// sid:transport:timeout 
+	DEBUG_PRINTLN(" ");
+	DEBUG_PRINT(F("Connected. SID="));
+	DEBUG_PRINTLN(sid);	// sid:transport:timeout 
 
 	while (client.available()) readLine();
 	client.stop();
@@ -209,30 +214,25 @@ bool SocketIOClient::readHandshake() {
 
 	// reconnect on websocket connection
 	if (!client.connect(hostname, port)) {
-		Serial.print(F("Websocket failed."));
+		DEBUG_PRINTLN(F("Websocket failed."));
 		return false;
 	}
-	Serial.println(F("Connecting via Websocket"));
+	DEBUG_PRINTLN(F("Connecting via Websocket"));
 
 	client.print(F("GET /socket.io/1/websocket/?transport=websocket&b64=true&sid="));
 	client.print(sid);
-	client.print(F(" HTTP/1.1\r\n"));
-
+	client.println(F(" HTTP/1.1"));
 	client.print(F("Host: "));
-	client.print(hostname);
-	client.print("\r\n");
-	client.print(F("Origin: ArduinoSocketIOClient\r\n"));
+	client.println(hostname);
+	client.println(F("Origin: ArduinoSocketIOClient"));
 	client.print(F("Sec-WebSocket-Key: "));
-	client.print(sid);
-	client.print("\r\n");
-	client.print(F("Sec-WebSocket-Version: 13\r\n"));
-	client.print(F("Upgrade: websocket\r\n"));	// must be camelcase ?!
+	client.println(sid);
+	client.println(F("Sec-WebSocket-Version: 13"));
+	client.println(F("Upgrade: websocket"));	// must be camelcase ?!
 	client.println(F("Connection: Upgrade\r\n"));
-
-
-
-
+  DEBUG_PRINTLN("waitForInput");
 	if (!waitForInput()) return false;
+  DEBUG_PRINTLN("readLine");
 	readLine();
 	if (atoi(&databuffer[9]) != 101) {	// check for "HTTP/1.1 101 response, means Updrage to Websocket OK
 		while (client.available()) readLine();
@@ -324,14 +324,21 @@ void SocketIOClient::readLine() {
 	while (client.available() && (dataptr < &databuffer[DATA_BUFFER_LEN - 2]))
 	{
 		char c = client.read();
-		Serial.print(c);			//Can be used for debugging
-		if (c == 0) Serial.print("");
-		else if (c == 255) Serial.println("");
-		else if (c == '\r') { ; }
-		else if (c == '\n') break;
-		else *dataptr++ = c;
-	}
-	*dataptr = 0;
+    switch (c) {
+      case 0:
+      case 255:
+      case '\r':
+        DEBUG_PRINT("");
+        break;
+      case '\n':
+        *dataptr = 0;
+        return;
+      default:
+        DEBUG_PRINT(c);			//Can be used for debugging
+        *dataptr++ = c;
+        break;
+    }
+  }
 }
 
 void SocketIOClient::send(String message) {

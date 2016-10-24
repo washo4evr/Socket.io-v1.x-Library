@@ -25,7 +25,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "Arduino.h"
-
+#define DEBUG
 #ifdef DEBUG
  #define DEBUG_PRINT(x)  Serial.print (x)
  #define DEBUG_PRINTLN(x)  Serial.println (x)
@@ -72,8 +72,10 @@ public:
 	void postREST(String path, String type, String data);
 	void putREST(String path, String type, String data);
 	void deleteREST(String path);
+  void setCallbackConnect(void (* callbackConnect)(void));
 private:
 	void parser(int index);
+  void (* callbackConnect)(void);
 	void sendHandshake(char hostname[]);
 	//EthernetClient client;				//For ENC28J60 or W5100
 	WiFiClient client;						//For ESP8266
