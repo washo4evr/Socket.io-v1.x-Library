@@ -40,7 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ESP8266WiFi.h>				//For ESP8266
 #endif
 
-#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60)ENC28J60)	//If no interface is defined
+#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60))	//If no interface is defined
 #error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
 #error "above your includes like so : #define ESP8266 "
 #endif
