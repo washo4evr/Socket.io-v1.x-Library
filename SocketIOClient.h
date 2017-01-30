@@ -40,7 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ESP8266WiFi.h>				//For ESP8266
 #endif
 
-#if (!defined(ESP8266) || !defined(W5100) || !defined(ENC28J60))	//If no interface is defined
+#if (!defined(ESP8266) && !defined(W5100) && !defined(ENC28J60))	//If no interface is defined
 #error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
 #error "above your includes like so : #define ESP8266 "
 #endif
@@ -51,15 +51,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 class SocketIOClient {
 public:
-	bool connect(char hostname[], int port = 80);
+	bool connect(char hostname[], int port = 80, char nsp[] = "");
 	bool connectHTTP(char hostname[], int port = 80);
 	bool connected();
 	void disconnect();
-	bool reconnect(char hostname[], int port = 80);
+	bool reconnect(char hostname[], int port = 80, char nsp[] = "");
 	bool monitor();
+	void sendMessage(String message = "");
 	void send(String RID, String Rname, String Rcontent);
+	void sendNSP();
 	void sendJSON(String RID, String JSON);
 	void heartbeat(int select);
+	void clear();
 	void getREST(String path);
 	void postREST(String path, String type, String data);
 	void putREST(String path, String type, String data);
@@ -76,6 +79,7 @@ private:
 	char sid[SID_LEN];
 	char key[28];
 	char *hostname;
+	char *nsp;
 	int port;
 
 	void findColon(char which);
