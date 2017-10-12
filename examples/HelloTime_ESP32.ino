@@ -5,12 +5,12 @@
  *  below. Or just customize this script to talk to other HTTP servers.
  *
  */
-#include <WiFi.h> // this is different
+#define ESP32
 #include <SocketIOClient.h>
 
 SocketIOClient client;
-const char* ssid     = "xxxxxxxxxxxxxxx";
-const char* password = "xxxxxxxxxxxxxxxx";
+const char* ssid     = "xxxxxxxxxxxxxxxxx";
+const char* password = "xxxxxxxxxxxxx";
 
 char host[] = "192.168.1.1";
 int port = 1234;
@@ -62,8 +62,8 @@ unsigned long currentMillis = millis();
   {
     previousMillis = currentMillis;
     //client.heartbeat(0);
-    Serial.print("#####################################  ");
-    Serial.println(previousMillis);
+    Serial.print("**************************************  ");
+    Serial.println(lastsend);
     client.send("atime", "message", "Time please?");
     lastsend = millis();
     Serial.print("**************************************  ");
