@@ -22,9 +22,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-
-#define ESP8266
-
+#define ESP32
 #include <SocketIOClient.h>
 
 
@@ -35,20 +33,12 @@ String Rcontent = "";
 
 
 
-bool SocketIOClient::connect(char thehostname[], int theport, char thensp[]) {
-	while(!client.connect(thehostname, theport)){
-	    Serial.println("Pas de connexion ...");
-	    delay(200);
-	}
-  	Serial.println("Connexion établie");
-	/*if (!client.connect(thehostname, theport)) return false;*/
+bool SocketIOClient::connect(char thehostname[], int theport) {
+	if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
 	port = theport;
-	nsp = thensp;
 	sendHandshake(hostname);
-	Serial.println("Handshake établie");
-	bool result = readHandshake();
-	return result;
+	return readHandshake();
 }
 
 bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
@@ -58,9 +48,13 @@ bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
 	return true;
 }
 
-bool SocketIOClient::reconnect(char thehostname[], int theport, char thensp[])
+bool SocketIOClient::reconnect(char thehostname[], int theport)
 {
-	return connect(thehostname, theport, thensp);
+	if (!client.connect(thehostname, theport)) return false;
+	hostname = thehostname;
+	port = theport;
+	sendHandshake(hostname);
+	return readHandshake();
 }
 
 bool SocketIOClient::connected() {
@@ -118,9 +112,13 @@ void SocketIOClient::parser(int index) {
 			Serial.println("Upgrade to WebSocket confirmed");
 			break;
 		case '2':
-			RID = rcvdmsg.substring(rcvdmsg.indexOf("[\"")+2, rcvdmsg.indexOf("\","));
+			RID = rcvdmsg.substring(4, rcvdmsg.indexOf("\","));
 			Rname = rcvdmsg.substring(rcvdmsg.indexOf("\",") + 4, rcvdmsg.indexOf("\":"));
 			Rcontent = rcvdmsg.substring(rcvdmsg.indexOf("\":") + 3, rcvdmsg.indexOf("\"}"));
+			//Serial.println("RID = " + RID);
+			//Serial.println("Rname = " + Rname);
+			//Serial.println("Rcontent = " + Rcontent);
+			Serial.println(rcvdmsg);
 			break;
 		}
 	}
@@ -149,6 +147,10 @@ bool SocketIOClient::monitor() {
 		dataptr = databuffer;
 		index = tmp.indexOf((char)129);	//129 DEC = 0x81 HEX = sent for proper communication
 		index2 = tmp.indexOf((char)129, index + 1);
+		/*Serial.print("Index = ");			//Can be used for debugging
+		Serial.print(index);
+		Serial.print(" & Index2 = ");
+		Serial.println(index2);*/
 		if (index != -1)
 		{
 			parser(index);
@@ -158,19 +160,13 @@ bool SocketIOClient::monitor() {
 			parser(index2);
 		}
 	}
-	return 1;
 }
 
 void SocketIOClient::sendHandshake(char hostname[]) {
-	String request = "";
-	request +=	"GET /socket.io/1/?EIO=3&transport=polling&b64=true HTTP/1.1\r\n";
-	request +=	"Host: ";
-	request += hostname;
-	request += "\r\n";
-	request +=	"Origin: Arduino\r\n";
-	request +=	"Connexion: keep-alive\r\n\r\n";
-
-	client.print(request);
+	client.println(F("GET /socket.io/1/?transport=polling&b64=true HTTP/1.1"));
+	client.print(F("Host: "));
+	client.println(hostname);
+	client.println(F("Origin: Arduino\r\n"));
 }
 
 bool SocketIOClient::waitForInput(void) {
@@ -194,7 +190,6 @@ bool SocketIOClient::readHandshake() {
 	readLine();
 	if (atoi(&databuffer[9]) != 200) {
 		while (client.available()) readLine();
-
 		client.stop();
 		return false;
 	}
@@ -216,39 +211,42 @@ bool SocketIOClient::readHandshake() {
 
 	while (client.available()) readLine();
 	client.stop();
-	delay(200);
+	delay(1000);
+
+	// reconnect on websocket connection
 	if (!client.connect(hostname, port)) {
 		Serial.print(F("Websocket failed."));
 		return false;
 	}
-
 	Serial.println(F("Connecting via Websocket"));
 
-	String request = "";
-	request += "GET /socket.io/1/websocket/?EIO=3&transport=websocket&b64=true&sid=" ;
-	request += sid ;
-	request += " HTTP/1.1\r\n" ;
-	request += "Host: " ;
-	request += hostname ;
-	request += "\r\n" ;
-	request += "Origin: Arduino\r\n" ;
-	request += "Sec-WebSocket-Key: " ;
-	request += sid ;
-	request += "\r\n" ;
-	request += "Sec-WebSocket-Version: 13\r\n" ;
-	request += "Upgrade: websocket\r\n" ;
-	request += "Connection: Upgrade\r\n" ;
-	request += "\r\n" ;
+	client.print(F("GET /socket.io/1/websocket/?transport=websocket&b64=true&sid="));
+	client.print(sid);
+	client.print(F(" HTTP/1.1\r\n"));
 
-	client.print(request);
+	client.print(F("Host: "));
+	client.print(hostname);
+	client.print("\r\n");
+	client.print(F("Sec-WebSocket-Version: 13\r\n"));
+	client.print(F("Origin: ArduinoSocketIOClient\r\n"));
+	client.print(F("Sec-WebSocket-Extensions: permessage-deflate\r\n"));
+	client.print(F("Sec-WebSocket-Key: IAMVERYEXCITEDESP32FTW==\r\n")); // can be anything
 
-	Serial.println(F("Websocket send"));
+	client.print(F("Cookie: io="));
+	client.print(sid);
+	client.print("\r\n");
+	
+	client.print(F("Connection: Upgrade\r\n"));
+
+	client.println(F("Upgrade: websocket\r\n"));	// socket.io v2.0.3 supported
+
+
+
 
 	if (!waitForInput()) return false;
 	readLine();
 	if (atoi(&databuffer[9]) != 101) {	// check for "HTTP/1.1 101 response, means Updrage to Websocket OK
 		while (client.available()) readLine();
-
 		client.stop();
 		return false;
 	}
@@ -289,10 +287,6 @@ bool SocketIOClient::readHandshake() {
 	client.print(masked);
 
 	monitor();		// treat the response as input
-	if(nsp != ""){
-		sendNSP();
-	}
-
 	return true;
 }
 
@@ -366,8 +360,9 @@ void SocketIOClient::readLine() {
 	*dataptr = 0;
 }
 
-void SocketIOClient::sendMessage(String message){
-	String dataSend = "";
+void SocketIOClient::send(String RID, String Rname, String Rcontent) {
+
+	String message = "42[\"" + RID + "\",{\"" + Rname + "\":\"" + Rcontent + "\"}]";
 	int header[10];
 	header[0] = 0x81;
 	int msglength = message.length();
@@ -376,66 +371,110 @@ void SocketIOClient::sendMessage(String message){
 	String masked = message;
 	for (int i = 0; i < 4; i++)
 	{
-		char a = random(1, 10);
+		char a = random(48, 57);
 		mask += a;
 	}
 	for (int i = 0; i < msglength; i++)
 		masked[i] = message[i] ^ mask[i % 4];
-	
-	dataSend += (char)header[0];
 
+	client.print((char)header[0]);	//has to be sent for proper communication
+									//Depending on the size of the message
 	if (msglength <= 125)
 	{
 		header[1] = msglength + 128;
-		dataSend += (char)header[1];
+		client.print((char)header[1]);	//size of the message + 128 because message has to be masked
 	}
 	else if (msglength >= 126 && msglength <= 65535)
 	{
 		header[1] = 126 + 128;
-		dataSend += (char)header[1];
+		client.print((char)header[1]);
 		header[2] = (msglength >> 8) & 255;
-		dataSend += (char)header[2];
+		client.print((char)header[2]);
 		header[3] = (msglength)& 255;
-		dataSend += (char)header[3];
+		client.print((char)header[3]);
 	}
 	else
 	{
-		int num = 1;
-		header[num] = 127 + 128;
-		dataSend += (char)header[num];
-		for(int i = 56 ; i > 0 ; i -= 8){
-			num++;
-			header[num] = (msglength >> i) & 255;
-			dataSend += (char)header[num];
-		}
+		header[1] = 127 + 128;
+		client.print((char)header[1]);
+		header[2] = (msglength >> 56) & 255;
+		client.print((char)header[2]);
+		header[3] = (msglength >> 48) & 255;
+		client.print((char)header[4]);
+		header[4] = (msglength >> 40) & 255;
+		client.print((char)header[4]);
+		header[5] = (msglength >> 32) & 255;
+		client.print((char)header[5]);
+		header[6] = (msglength >> 24) & 255;
+		client.print((char)header[6]);
+		header[7] = (msglength >> 16) & 255;
+		client.print((char)header[7]);
+		header[8] = (msglength >> 8) & 255;
+		client.print((char)header[8]);
 		header[9] = (msglength)& 255;
-		dataSend += (char)header[9];
-
+		client.print((char)header[9]);
 	}
-	dataSend += mask;
-	dataSend += masked;
 
-	client.print(dataSend);
-}
-
-void SocketIOClient::send(String RID, String Rname, String Rcontent) {
-
-	String message = "42/" + String(nsp) + ",[\"" + RID + "\",{\"" + Rname + "\":\"" + Rcontent + "\"}]";
-	
-	sendMessage(message);
-}
-
-void SocketIOClient::sendNSP() {
-
-	String message = "40/" + String(nsp);
-	
-	sendMessage(message);
+	client.print(mask);
+	client.print(masked);
 }
 
 void SocketIOClient::sendJSON(String RID, String JSON) {
-	String message = "42/" + String(nsp) + ",[\"" + RID + "\"," + JSON + "]";
-	
-	sendMessage(message);
+	String message = "42[\"" + RID + "\"," + JSON + "]";
+	int header[10];
+	header[0] = 0x81;
+	int msglength = message.length();
+	randomSeed(analogRead(0));
+	String mask = "";
+	String masked = message;
+	for (int i = 0; i < 4; i++)
+	{
+		char a = random(48, 57);
+		mask += a;
+	}
+	for (int i = 0; i < msglength; i++)
+		masked[i] = message[i] ^ mask[i % 4];
+
+	client.print((char)header[0]);	//has to be sent for proper communication
+									//Depending on the size of the message
+	if (msglength <= 125)
+	{
+		header[1] = msglength + 128;
+		client.print((char)header[1]);	//size of the message + 128 because message has to be masked
+	}
+	else if (msglength >= 126 && msglength <= 65535)
+	{
+		header[1] = 126 + 128;
+		client.print((char)header[1]);
+		header[2] = (msglength >> 8) & 255;
+		client.print((char)header[2]);
+		header[3] = (msglength)& 255;
+		client.print((char)header[3]);
+	}
+	else
+	{
+		header[1] = 127 + 128;
+		client.print((char)header[1]);
+		header[2] = (msglength >> 56) & 255;
+		client.print((char)header[2]);
+		header[3] = (msglength >> 48) & 255;
+		client.print((char)header[4]);
+		header[4] = (msglength >> 40) & 255;
+		client.print((char)header[4]);
+		header[5] = (msglength >> 32) & 255;
+		client.print((char)header[5]);
+		header[6] = (msglength >> 24) & 255;
+		client.print((char)header[6]);
+		header[7] = (msglength >> 16) & 255;
+		client.print((char)header[7]);
+		header[8] = (msglength >> 8) & 255;
+		client.print((char)header[8]);
+		header[9] = (msglength)& 255;
+		client.print((char)header[9]);
+	}
+
+	client.print(mask);
+	client.print(masked);
 }
 
 void SocketIOClient::heartbeat(int select) {
@@ -443,7 +482,6 @@ void SocketIOClient::heartbeat(int select) {
 	String mask = "";
 	String masked = "";
 	String message = "";
-	String dataSend = "";
 	if (select == 0)
 	{
 		masked = "2";
@@ -456,22 +494,17 @@ void SocketIOClient::heartbeat(int select) {
 	}
 	for (int i = 0; i < 4; i++)	//generate a random mask, 4 bytes, ASCII 0 to 9
 	{
-		char a = random(1, 10);
+		char a = random(48, 57);
 		mask += a;
 	}
 
 	for (int i = 0; i < message.length(); i++)
 		masked[i] = message[i] ^ mask[i % 4];	//apply the "mask" to the message ("2" : ping or "3" : pong)
 
-	dataSend += (char)0x81;
-	dataSend += (char)129;
-	dataSend += mask;
-	dataSend += masked;
-	client.print(dataSend);
-}
 
-void SocketIOClient::clear() {
-	RID = "";
-	Rname = "";
-	Rcontent = "";
+
+	client.print((char)0x81);	//has to be sent for proper communication
+	client.print((char)129);	//size of the message (1) + 128 because message has to be masked
+	client.print(mask);
+	client.print(masked);
 }
