@@ -11,10 +11,8 @@ copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following
 conditions:
 JSON support added using https://github.com/bblanchon/ArduinoJson
-
 The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -29,19 +27,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if defined(W5100)
 #include <Ethernet.h>
 #include "SPI.h"					//For W5100
-#endif
-
-#if defined(ENC28J60)
+#elif defined(ENC28J60)
 #include <UIPEthernet.h>
 #include "SPI.h"					//For ENC28J60
-#endif
-
-#if defined(ESP8266)
+#elif defined(ESP8266)
 #include <ESP8266WiFi.h>				//For ESP8266
-#endif
-
-#if (!defined(ESP8266) && !defined(W5100) && !defined(ENC28J60))	//If no interface is defined
-#error "Please specify an interface such as W5100, ENC28J60, or ESP8266"
+#elif defined(ESP32)
+#include <WiFi.h>					//For ESP32
+#elif (!defined(ESP32) && !defined(ESP8266) && !defined(W5100) && !defined(ENC28J60))	//If no interface is defined
+#error "Please specify an interface such as W5100, ENC28J60, ESP8266 or ESP32"
 #error "above your includes like so : #define ESP8266 "
 #endif
 
@@ -51,11 +45,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 class SocketIOClient {
 public:
-	bool connect(char hostname[], int port = 80, char nsp[] = "");
+	bool connect(char hostname[], int port = 80);
 	bool connectHTTP(char hostname[], int port = 80);
 	bool connected();
 	void disconnect();
-	bool reconnect(char hostname[], int port = 80, char nsp[] = "");
+	bool reconnect(char hostname[], int port = 80);
 	bool monitor();
 	void sendMessage(String message = "");
 	void send(String RID, String Rname, String Rcontent);
@@ -70,8 +64,13 @@ public:
 private:
 	void parser(int index);
 	void sendHandshake(char hostname[]);
-	//EthernetClient client;				//For ENC28J60 or W5100
-	WiFiClient client;						//For ESP8266
+#if defined(W5100) || defined(ENC28J60)
+	EthernetClient client;				//For ENC28J60 or W5100
+#endif
+#if defined(ESP8266) || defined(ESP32)
+	WiFiClient client;				//For ESP8266 or ESP32
+#endif
+
 	bool readHandshake();
 	void readLine();
 	char *dataptr;
