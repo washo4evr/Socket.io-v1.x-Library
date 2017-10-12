@@ -1,4 +1,4 @@
-# Socket.io-v1.x-Library
+# Socket.io Library for v1.x and v2.x
 Socket.io Library for Arduino
 
 Works with W5100 & ENC28J60 as well as ESP8266 and ESP32 (beta)
