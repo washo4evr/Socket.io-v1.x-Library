@@ -154,10 +154,13 @@ bool SocketIOClient::monitor() {
 		if (index != -1)
 		{
 			parser(index);
+			return 1;
+			
 		}
 		if (index2 != -1)
 		{
 			parser(index2);
+			return 1;
 		}
 	}
 }
