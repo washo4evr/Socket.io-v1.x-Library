@@ -45,11 +45,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 class SocketIOClient {
 public:
-	bool connect(char hostname[], int port = 80);
+	bool connect(char hostname[], int port = 80, char query[] = "");
 	bool connectHTTP(char hostname[], int port = 80);
 	bool connected();
 	void disconnect();
-	bool reconnect(char hostname[], int port = 80);
+	bool reconnect(char hostname[], int port = 80, char query[] = "");
 	bool monitor();
 	void sendMessage(String message = "");
 	void send(String RID, String Rname, String Rcontent);
@@ -63,7 +63,7 @@ public:
 	void deleteREST(String path);
 private:
 	void parser(int index);
-	void sendHandshake(char hostname[]);
+	void sendHandshake(char hostname[], char query[] = "");
 #if defined(W5100) || defined(ENC28J60)
 	EthernetClient client;				//For ENC28J60 or W5100
 #endif
@@ -78,6 +78,7 @@ private:
 	char sid[SID_LEN];
 	char key[28];
 	char *hostname;
+	char *query;
 	char *nsp;
 	int port;
 
