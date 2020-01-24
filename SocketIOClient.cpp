@@ -112,6 +112,11 @@ void SocketIOClient::parser(int index) {
 			Serial.println("Upgrade to WebSocket confirmed");
 			break;
 		case '2':
+			int end = rcvdmsg.indexOf("\",");
+			if (end == -1) {
+				end = rcvdmsg.indexOf("\"]");
+			}
+			RID = rcvdmsg.substring(rcvdmsg.indexOf("[\"")+2, end);
 			RID = rcvdmsg.substring(4, rcvdmsg.indexOf("\","));
 			Rname = rcvdmsg.substring(rcvdmsg.indexOf("\",") + 4, rcvdmsg.indexOf("\":"));
 			Rcontent = rcvdmsg.substring(rcvdmsg.indexOf("\":") + 3, rcvdmsg.indexOf("\"}"));
