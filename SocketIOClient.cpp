@@ -224,7 +224,9 @@ bool SocketIOClient::readHandshake() {
 	}
 	Serial.println(F("Connecting via Websocket"));
 
-	client.print(F("GET /socket.io/1/websocket/?transport=websocket&b64=true&sid="));
+	client.print(F("GET /socket.io/1/websocket/?"));
+	client.print(query);
+	client.print(F("&transport=websocket&b64=true&sid="));
 	client.print(sid);
 	client.print(F(" HTTP/1.1\r\n"));
 
