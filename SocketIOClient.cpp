@@ -33,11 +33,12 @@ String Rcontent = "";
 
 
 
-bool SocketIOClient::connect(char thehostname[], int theport) {
+bool SocketIOClient::connect(char thehostname[], int theport, char thequery[] = "") {
 	if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
 	port = theport;
-	sendHandshake(hostname);
+	query = thequery;
+	sendHandshake(hostname, query);
 	return readHandshake();
 }
 
@@ -48,12 +49,13 @@ bool SocketIOClient::connectHTTP(char thehostname[], int theport) {
 	return true;
 }
 
-bool SocketIOClient::reconnect(char thehostname[], int theport)
+bool SocketIOClient::reconnect(char thehostname[], int theport, char thequery[] = "")
 {
 	if (!client.connect(thehostname, theport)) return false;
 	hostname = thehostname;
 	port = theport;
-	sendHandshake(hostname);
+	query = thequery;
+	sendHandshake(hostname, query);
 	return readHandshake();
 }
 
@@ -167,8 +169,10 @@ bool SocketIOClient::monitor() {
 	}
 }
 
-void SocketIOClient::sendHandshake(char hostname[]) {
-	client.println(F("GET /socket.io/1/?transport=polling&b64=true HTTP/1.1"));
+void SocketIOClient::sendHandshake(char hostname[], char query[] = "") {
+	client.print(F("GET /socket.io/1/?"));
+	client.print(query);
+	client.println(F("&transport=polling&b64=true HTTP/1.1"));
 	client.print(F("Host: "));
 	client.println(hostname);
 	client.println(F("Origin: Arduino\r\n"));
@@ -225,7 +229,9 @@ bool SocketIOClient::readHandshake() {
 	}
 	Serial.println(F("Connecting via Websocket"));
 
-	client.print(F("GET /socket.io/1/websocket/?transport=websocket&b64=true&sid="));
+	client.print(F("GET /socket.io/1/websocket/?"));
+	client.print(query);
+	client.print(F("&transport=websocket&b64=true&sid="));
 	client.print(sid);
 	client.print(F(" HTTP/1.1\r\n"));
 
