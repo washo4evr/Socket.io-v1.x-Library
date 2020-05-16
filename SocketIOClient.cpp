@@ -137,15 +137,12 @@ bool SocketIOClient::monitor() {
 	String tmp = "";
 	*databuffer = 0;
 
-	if (!client.connected()) {
-		if (!client.connect(hostname, port)) return 0;
+	//Checking for client availability, If not returning false
+	if (!client.connected() &&
+	    !client.connect(hostname, port) &&
+	    !client.available()) {
+		return false;
 	}
-
-	if (!client.available())
-	{
-		return 0;
-	}
-	char which;
 
 	while (client.available()) {
 		readLine();
@@ -167,7 +164,7 @@ bool SocketIOClient::monitor() {
 			parser(index2);
 		}
 	}
-	return 1;
+	return true;
 }
 
 void SocketIOClient::sendHandshake(char hostname[], char query[] = "") {
@@ -217,7 +214,7 @@ bool SocketIOClient::readHandshake() {
 	}
 	Serial.println(" ");
 	Serial.print(F("Connected. SID="));
-	Serial.println(sid);	// sid:transport:timeout 
+	Serial.println(sid);	// sid:transport:timeout
 
 	while (client.available()) readLine();
 	client.stop();
@@ -247,7 +244,7 @@ bool SocketIOClient::readHandshake() {
 	client.print(F("Cookie: io="));
 	client.print(sid);
 	client.print("\r\n");
-	
+
 	client.print(F("Connection: Upgrade\r\n"));
 
 	client.println(F("Upgrade: websocket\r\n"));	// socket.io v2.0.3 supported
